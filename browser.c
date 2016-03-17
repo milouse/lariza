@@ -619,9 +619,7 @@ key_location(GtkWidget *widget, GdkEvent *event, gpointer data)
                                                         c->web_view));
                     return TRUE;
                 case GDK_KEY_k:  /* initiate search (BOTH hands) */
-                    gtk_entry_set_text(GTK_ENTRY(c->location), "/");
-                    gtk_editable_set_position(GTK_EDITABLE(c->location), -1);
-                    return TRUE;
+                    return init_keyword_search(c);
                 case GDK_KEY_c:  /* reload trusted certs (left hand) */
                     trust_user_certs(wc);
                     return TRUE;
