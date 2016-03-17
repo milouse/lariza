@@ -777,7 +777,10 @@ gboolean
 init_keyword_search(gpointer data)
 {
     struct Client *c = (struct Client *)data;
-    gtk_widget_grab_focus(c->location);
+
+    if (!gtk_widget_is_focus(c->location))
+        gtk_widget_grab_focus(c->location);
+
     gtk_entry_set_text(GTK_ENTRY(c->location), "/");
     gtk_editable_set_position(GTK_EDITABLE(c->location), -1);
     return TRUE;
