@@ -36,6 +36,7 @@ static void hover_web_view(WebKitWebView *, WebKitHitTestResult *, guint, gpoint
 static gboolean key_downloadmanager(GtkWidget *, GdkEvent *, gpointer);
 static gboolean key_location(GtkWidget *, GdkEvent *, gpointer);
 static gboolean key_web_view(GtkWidget *, GdkEvent *, gpointer);
+static gboolean init_keyword_search(gpointer);
 static void keywords_load(void);
 static gboolean keywords_try_search(WebKitWebView *, const gchar *);
 static gboolean remote_msg(GIOChannel *, GIOCondition, gpointer);
@@ -713,10 +714,7 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
                     gtk_widget_grab_focus(c->location);
                     return TRUE;
                 case GDK_KEY_k:  /* initiate search (BOTH hands) */
-                    gtk_widget_grab_focus(c->location);
-                    gtk_entry_set_text(GTK_ENTRY(c->location), "/");
-                    gtk_editable_set_position(GTK_EDITABLE(c->location), -1);
-                    return TRUE;
+                    return init_keyword_search(c);
                 case GDK_KEY_c:  /* reload trusted certs (left hand) */
                     trust_user_certs(wc);
                     return TRUE;
@@ -733,6 +731,11 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
         {
             search(c, 1);
             return TRUE;
+        }
+        /* quick launch search (vim like, right hand) */
+        else if (((GdkEventKey *)event)->keyval == GDK_KEY_slash)
+        {
+            return init_keyword_search(c);
         }
         else if (((GdkEventKey *)event)->keyval == GDK_KEY_Escape)
         {
@@ -774,6 +777,16 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
     }
 
     return FALSE;
+}
+
+gboolean
+init_keyword_search(gpointer data)
+{
+    struct Client *c = (struct Client *)data;
+    gtk_widget_grab_focus(c->location);
+    gtk_entry_set_text(GTK_ENTRY(c->location), "/");
+    gtk_editable_set_position(GTK_EDITABLE(c->location), -1);
+    return TRUE;
 }
 
 void
