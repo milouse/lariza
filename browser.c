@@ -716,25 +716,20 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
                     return TRUE;
             }
         }
-        /* search backward (left hand) */
-        else if (((GdkEventKey *)event)->keyval == GDK_KEY_F2)
+        else
         {
-            return search(c, -1);
-        }
-        /* search forward (left hand) */
-        else if (((GdkEventKey *)event)->keyval == GDK_KEY_F3)
-        {
-            return search(c, 1);
-        }
-        /* quick launch search (vim like, right hand) */
-        else if (((GdkEventKey *)event)->keyval == GDK_KEY_slash)
-        {
-            return init_keyword_search(c);
-        }
-        else if (((GdkEventKey *)event)->keyval == GDK_KEY_Escape)
-        {
-            webkit_web_view_stop_loading(WEBKIT_WEB_VIEW(c->web_view));
-            gtk_level_bar_set_value(GTK_LEVEL_BAR(c->progress), 0);
+            switch (((GdkEventKey *)event)->keyval)
+            {
+                case GDK_KEY_F2: /* search backward (left hand) */
+                    return search(c, -1);
+                case GDK_KEY_F3: /* search forward (left hand) */
+                    return search(c, 1);
+                case GDK_KEY_slash: /* quick launch search (vim like, right hand) */
+                    return init_keyword_search(c);
+                case GDK_KEY_Escape:
+                    webkit_web_view_stop_loading(WEBKIT_WEB_VIEW(c->web_view));
+                    gtk_level_bar_set_value(GTK_LEVEL_BAR(c->progress), 0);
+            }
         }
     }
     else if (event->type == GDK_BUTTON_PRESS)
