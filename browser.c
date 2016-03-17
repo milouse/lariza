@@ -696,11 +696,17 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
                     gtk_widget_show_all(dm.win);
                     return TRUE;
                 case GDK_KEY_2:  /* search forward (left hand) */
-                case GDK_KEY_n:  /* search forward (maybe both hands) */
                     search(c, 1);
                     return TRUE;
                 case GDK_KEY_3:  /* search backward (left hand) */
                     search(c, -1);
+                    return TRUE;
+                case GDK_KEY_b:  /* history go backward (left hand) */
+                case GDK_KEY_p:  /* history go backward (right hand) */
+                    webkit_web_view_go_back(WEBKIT_WEB_VIEW(c->web_view));
+                    return TRUE;
+                case GDK_KEY_n:  /* history go forward (left hand) */
+                    webkit_web_view_go_forward(WEBKIT_WEB_VIEW(c->web_view));
                     return TRUE;
                 case GDK_KEY_l:  /* location (BOTH hands) */
                     gtk_widget_grab_focus(c->location);
@@ -714,6 +720,18 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
                     trust_user_certs(wc);
                     return TRUE;
             }
+        }
+        /* search backward (left hand) */
+        else if (((GdkEventKey *)event)->keyval == GDK_KEY_F2)
+        {
+            search(c, -1);
+            return TRUE;
+        }
+        /* search forward (left hand) */
+        else if (((GdkEventKey *)event)->keyval == GDK_KEY_F3)
+        {
+            search(c, 1);
+            return TRUE;
         }
         else if (((GdkEventKey *)event)->keyval == GDK_KEY_Escape)
         {
