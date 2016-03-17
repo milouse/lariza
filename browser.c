@@ -688,6 +688,7 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
     struct Client *c = (struct Client *)data;
     gdouble dx, dy;
     gchar *f;
+    const gchar *t;
     gfloat z;
     WebKitWebContext *wc = webkit_web_view_get_context(WEBKIT_WEB_VIEW(c->web_view));
 
@@ -754,6 +755,11 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
                     gtk_widget_grab_focus(c->location);
                     return TRUE;
                 case GDK_KEY_f:  /* initiate search (BOTH hands) */
+                    return init_keyword_search(c);
+                case GDK_KEY_s:  /* initiate or continue current search */
+                    t = gtk_entry_get_text(GTK_ENTRY(c->location));
+                    if (t != NULL && t[0] == '/')
+                        return search(c, 1);
                     return init_keyword_search(c);
             }
 
