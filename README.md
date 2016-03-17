@@ -3,10 +3,11 @@ lariza
 
 A simple web browser using GTK+ 3, GLib and WebKit2GTK+.
 
-This is a friendly fork of the original project in order to test various
-stuffs.
+This is a friendly fork of the
+[original project](https://github.com/vain/lariza) by Vain in order to
+test various stuffs.
 
-Their is no aim to release anytime soon. It is mainly for my personnal
+There is no aim to release anytime soon. It is mainly for my personnal
 use, to refresh my memory about C code and for fun. Do not hope any
 support from me. You are completely free to use it though.
 
