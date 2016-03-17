@@ -209,7 +209,7 @@ client_new(const gchar *uri)
     gtk_level_bar_set_value(GTK_LEVEL_BAR(c->progress), 0);
     gtk_widget_set_size_request(c->progress, 100, -1);*/
 
-    c->throbber = gtk_image_new_from_file(__MEDIA_DIR__"throbber_static.png");
+    c->throbber = gtk_image_new_from_file(__MEDIA_DIR__"mz_throbber_static.png");
     gtk_widget_set_size_request(c->throbber, 32, -1);
 
     c->top_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -328,7 +328,7 @@ changed_load_progress(GObject *obj, GParamSpec *pspec, gpointer data)
     //gtk_level_bar_set_value(GTK_LEVEL_BAR(c->progress), p);
     if (p == 1.0)
     {
-        gtk_image_set_from_file(GTK_IMAGE(c->throbber), __MEDIA_DIR__"throbber_static.png");
+        gtk_image_set_from_file(GTK_IMAGE(c->throbber), __MEDIA_DIR__"mz_throbber_static.png");
     }
 }
 
@@ -358,7 +358,7 @@ changed_uri(GObject *obj, GParamSpec *pspec, gpointer data)
 
     gtk_image_set_from_animation(
         GTK_IMAGE(c->throbber),
-        gdk_pixbuf_animation_new_from_file(__MEDIA_DIR__"throbber.gif", NULL)
+        gdk_pixbuf_animation_new_from_file(__MEDIA_DIR__"mz_throbber.gif", NULL)
     );
 
     t = webkit_web_view_get_uri(WEBKIT_WEB_VIEW(c->web_view));
@@ -662,7 +662,7 @@ key_location(GtkWidget *widget, GdkEvent *event, gpointer data)
                     {
                         gtk_image_set_from_animation(
                             GTK_IMAGE(c->throbber),
-                            gdk_pixbuf_animation_new_from_file(__MEDIA_DIR__"throbber.gif", NULL)
+                            gdk_pixbuf_animation_new_from_file(__MEDIA_DIR__"mz_throbber.gif", NULL)
                         );
                         f = ensure_uri_scheme(t);
                         webkit_web_view_load_uri(WEBKIT_WEB_VIEW(c->web_view), f);
@@ -670,7 +670,7 @@ key_location(GtkWidget *widget, GdkEvent *event, gpointer data)
                     }
                     return TRUE;
                 case GDK_KEY_Escape:
-                    gtk_image_set_from_file(GTK_IMAGE(c->throbber), __MEDIA_DIR__"throbber_static.png");
+                    gtk_image_set_from_file(GTK_IMAGE(c->throbber), __MEDIA_DIR__"mz_throbber_static.png");
                     t = webkit_web_view_get_uri(WEBKIT_WEB_VIEW(c->web_view));
                     gtk_entry_set_text(GTK_ENTRY(c->location),
                                        (t == NULL ? __NAME__ : t));
@@ -770,7 +770,7 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
                     return init_keyword_search(c);
                 case GDK_KEY_Escape:
                     webkit_web_view_stop_loading(WEBKIT_WEB_VIEW(c->web_view));
-                    gtk_image_set_from_file(GTK_IMAGE(c->throbber), __MEDIA_DIR__"throbber_static.png");
+                    gtk_image_set_from_file(GTK_IMAGE(c->throbber), __MEDIA_DIR__"mz_throbber_static.png");
                     //gtk_level_bar_set_value(GTK_LEVEL_BAR(c->progress), 0);
             }
         }
