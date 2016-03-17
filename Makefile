@@ -7,10 +7,10 @@ INSTALL = install
 INSTALL_PROGRAM = $(INSTALL)
 INSTALL_DATA = $(INSTALL) -m 644
 
-prefix = /usr/local
-exec_prefix = $(prefix)
+DESTDIR = /usr/local
+exec_prefix = $(DESTDIR)
 bindir = $(exec_prefix)/bin
-datarootdir = $(prefix)/share
+datarootdir = $(DESTDIR)/share
 mandir = $(datarootdir)/man
 man1dir = $(mandir)/man1
 
@@ -24,6 +24,7 @@ $(__NAME__): browser.c
 		-D__NAME__=\"$(__NAME__)\" \
 		-D__NAME_UPPERCASE__=\"$(__NAME_UPPERCASE__)\" \
 		-D__NAME_CAPITALIZED__=\"$(__NAME_CAPITALIZED__)\" \
+		-D__MEDIA_DIR__=\"$(datarootdir)/$(__NAME__)/\" \
 		-o $@ $< \
 		`pkg-config --cflags --libs gtk+-3.0 glib-2.0 webkit2gtk-4.0`
 
@@ -36,13 +37,12 @@ we_adblock.so: we_adblock.c
 		`pkg-config --cflags --libs glib-2.0 webkit2gtk-4.0`
 
 install: all installdirs
-	$(INSTALL_PROGRAM) $(__NAME__) $(DESTDIR)$(bindir)/$(__NAME__)
-	$(INSTALL_DATA) man1/$(__NAME__).1 $(DESTDIR)$(man1dir)/$(__NAME__).1
-	$(INSTALL_DATA) man1/$(__NAME__).usage.1 \
-		$(DESTDIR)$(man1dir)/$(__NAME__).usage.1
+	$(INSTALL_PROGRAM) $(__NAME__) $(bindir)/$(__NAME__)
+	$(INSTALL_DATA) man1/$(__NAME__).1 $(man1dir)/$(__NAME__).1
+	$(INSTALL_DATA) man1/$(__NAME__).usage.1 $(man1dir)/$(__NAME__).usage.1
 
 installdirs:
-	mkdir -p $(DESTDIR)$(bindir) $(DESTDIR)$(man1dir)
+	mkdir -p $(bindir) $(man1dir)
 
 clean:
 	rm -f $(__NAME__) we_adblock.so
