@@ -867,7 +867,10 @@ search(gpointer data, gint direction)
     WebKitFindController *fc = webkit_web_view_get_find_controller(web_view);
 
     if (search_text == NULL)
+    {
+        webkit_find_controller_search_finish(fc);
         return FALSE;
+    }
 
     switch (direction)
     {
