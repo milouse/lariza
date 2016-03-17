@@ -684,6 +684,7 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
                     g_free(f);
                     return TRUE;
                 case GDK_KEY_e:  /* new tab (left hand) */
+                case GDK_KEY_t:  /* more classical use with tabbed */
                     f = ensure_uri_scheme(home_uri);
                     client_new(f);
                     g_free(f);
