@@ -1006,13 +1006,19 @@ main(int argc, char **argv)
 
     grab_environment_configuration();
 
-    while ((opt = getopt(argc, argv, "e:CT")) != -1)
+    while ((opt = getopt(argc, argv, "d:e:h:CT")) != -1)
     {
         switch (opt)
         {
+            case 'd':
+                download_dir = optarg;
+                break;
             case 'e':
                 embed = atol(optarg);
                 tabbed_automagic = FALSE;
+                break;
+            case 'h':
+                home_uri = optarg;
                 break;
             case 'C':
                 cooperative_instances = FALSE;
