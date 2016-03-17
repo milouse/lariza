@@ -40,7 +40,7 @@ static gboolean init_keyword_search(gpointer);
 static void keywords_load(void);
 static gboolean keywords_try_search(WebKitWebView *, const gchar *);
 static gboolean remote_msg(GIOChannel *, GIOCondition, gpointer);
-static void search(gpointer, gint);
+static gboolean search(gpointer, gint);
 static Window tabbed_launch(void);
 static void trust_user_certs(WebKitWebContext *);
 
@@ -640,7 +640,7 @@ key_location(GtkWidget *widget, GdkEvent *event, gpointer data)
                         if (search_text != NULL)
                             g_free(search_text);
                         search_text = g_strdup(t + 1);  /* XXX whacky */
-                        search(c, 0);
+                        return search(c, 0);
                     }
                     else if (!keywords_try_search(WEBKIT_WEB_VIEW(c->web_view), t))
                     {
@@ -698,11 +698,9 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
                     gtk_widget_show_all(dm.win);
                     return TRUE;
                 case GDK_KEY_2:  /* search forward (left hand) */
-                    search(c, 1);
-                    return TRUE;
+                    return search(c, 1);
                 case GDK_KEY_3:  /* search backward (left hand) */
-                    search(c, -1);
-                    return TRUE;
+                    return search(c, -1);
                 case GDK_KEY_b:  /* history go backward (left hand) */
                 case GDK_KEY_p:  /* history go backward (right hand) */
                     webkit_web_view_go_back(WEBKIT_WEB_VIEW(c->web_view));
@@ -723,14 +721,12 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
         /* search backward (left hand) */
         else if (((GdkEventKey *)event)->keyval == GDK_KEY_F2)
         {
-            search(c, -1);
-            return TRUE;
+            return search(c, -1);
         }
         /* search forward (left hand) */
         else if (((GdkEventKey *)event)->keyval == GDK_KEY_F3)
         {
-            search(c, 1);
-            return TRUE;
+            return search(c, 1);
         }
         /* quick launch search (vim like, right hand) */
         else if (((GdkEventKey *)event)->keyval == GDK_KEY_slash)
@@ -862,7 +858,7 @@ remote_msg(GIOChannel *channel, GIOCondition condition, gpointer data)
     return TRUE;
 }
 
-void
+gboolean
 search(gpointer data, gint direction)
 {
     struct Client *c = (struct Client *)data;
@@ -870,7 +866,7 @@ search(gpointer data, gint direction)
     WebKitFindController *fc = webkit_web_view_get_find_controller(web_view);
 
     if (search_text == NULL)
-        return;
+        return FALSE;
 
     switch (direction)
     {
@@ -887,6 +883,7 @@ search(gpointer data, gint direction)
             webkit_find_controller_search_previous(fc);
             break;
     }
+    return TRUE;
 }
 
 Window
