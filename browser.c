@@ -113,6 +113,7 @@ client_new(const gchar *uri)
     struct Client *c;
     WebKitWebContext *wc;
     gchar *f;
+    WebKitSettings *ws;
 
     if (uri != NULL && cooperative_instances && !cooperative_alone)
     {
@@ -228,6 +229,9 @@ client_new(const gchar *uri)
     }
 
     clients++;
+
+    ws = webkit_web_view_get_settings(WEBKIT_WEB_VIEW(c->web_view));
+    webkit_settings_set_enable_spatial_navigation(ws, TRUE);
 
     return WEBKIT_WEB_VIEW(c->web_view);
 }
