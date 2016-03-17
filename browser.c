@@ -689,10 +689,7 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
         {
             switch (((GdkEventKey *)event)->keyval)
             {
-                case GDK_KEY_q:  /* close window (left hand) */
-                    gtk_widget_destroy(c->win);
-                    return TRUE;
-                case GDK_KEY_w:  /* home (left hand) */
+                case GDK_KEY_h:  /* home (left hand) */
                     f = ensure_uri_scheme(home_uri);
                     webkit_web_view_load_uri(WEBKIT_WEB_VIEW(c->web_view), f);
                     g_free(f);
@@ -730,6 +727,28 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
                     trust_user_certs(wc);
                     return TRUE;
             }
+        }
+        else if (((GdkEventKey *)event)->state & GDK_CONTROL_MASK)
+        {
+            switch (((GdkEventKey *)event)->keyval)
+            {
+                case GDK_KEY_w:
+                    gtk_widget_destroy(c->win);
+                    return TRUE;
+                case GDK_KEY_r:  /* reload (left hand) */
+                    webkit_web_view_reload_bypass_cache(WEBKIT_WEB_VIEW(
+                                                        c->web_view));
+                    return TRUE;
+                case GDK_KEY_d:  /* download manager (left hand) */
+                    gtk_widget_show_all(dm.win);
+                    return TRUE;
+                case GDK_KEY_l:  /* location (BOTH hands) */
+                    gtk_widget_grab_focus(c->location);
+                    return TRUE;
+                case GDK_KEY_f:  /* initiate search (BOTH hands) */
+                    return init_keyword_search(c);
+            }
+
         }
         else
         {
