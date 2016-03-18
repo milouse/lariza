@@ -772,9 +772,9 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
                     return search(c, -1);
                 case GDK_KEY_F3: /* search forward (left hand) */
                     return search(c, 1);
-                case GDK_KEY_BackSpace:
+                    /*case GDK_KEY_BackSpace:
                     webkit_web_view_go_back(WEBKIT_WEB_VIEW(c->web_view));
-                    return TRUE;
+                    return TRUE;*/
                 case GDK_KEY_Escape:
                     webkit_web_view_stop_loading(WEBKIT_WEB_VIEW(c->web_view));
                     gtk_image_set_from_file(GTK_IMAGE(c->throbber), __MEDIA_DIR__"mz_throbber_static.png");
