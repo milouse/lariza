@@ -86,6 +86,7 @@ static gchar *user_agent = NULL;
 static gchar *home_config_dir = NULL;
 static gchar *static_throbber = NULL;
 static gchar *dynamic_throbber = NULL;
+static gboolean be_verbose = FALSE;
 
 
 void
@@ -283,7 +284,8 @@ cooperation_setup(void)
     cooperative_pipe_fp = open(fifopath, O_WRONLY | O_NONBLOCK);
     if (!cooperative_pipe_fp)
     {
-        fprintf(stderr, __NAME__": Can't open FIFO at all.\n");
+        if (be_verbose)
+            fprintf(stderr, __NAME__": Can't open FIFO at all.\n");
     }
     else
     {
@@ -322,7 +324,8 @@ changed_download_progress(GObject *obj, GParamSpec *pspec, gpointer data)
     {
         /* This really should not happen because WebKit uses that URI to
          * write to a file... */
-        fprintf(stderr, __NAME__": Could not construct file name from URI!\n");
+        if (be_verbose)
+            fprintf(stderr, __NAME__": Could not construct file name from URI!\n");
         t = g_strdup_printf("%s (%.0f%% of %.1f MB)",
                             webkit_uri_response_get_uri(resp), p, size_mb);
     }
@@ -389,7 +392,8 @@ crashed_web_view(WebKitWebView *web_view, gpointer data)
     fprintf(stderr, __NAME__": WebView crashed!\n");
     if (crash_autoreload_delay >= 1)
     {
-        fprintf(stderr, __NAME__": Reloading WebView in %d seconds.\n",
+        if (be_verbose)
+            fprintf(stderr, __NAME__": Reloading WebView in %d seconds.\n",
                 crash_autoreload_delay);
         g_timeout_add_seconds(crash_autoreload_delay, crashed_web_view_reload,
                               web_view);
@@ -461,7 +465,8 @@ download_handle(WebKitDownload *download, gchar *suggested_filename, gpointer da
 
     if (suffix == 1000)
     {
-        fprintf(stderr, __NAME__": Suffix reached limit for download.\n");
+        if (be_verbose)
+            fprintf(stderr, __NAME__": Suffix reached limit for download.\n");
         webkit_download_cancel(download);
     }
     else
@@ -1097,19 +1102,16 @@ main(int argc, char **argv)
     grab_environment_configuration();
     grab_current_user_configuration();
 
-    while ((opt = getopt(argc, argv, "d:e:h:CT")) != -1)
+    while ((opt = getopt(argc, argv, "e:vCT")) != -1)
     {
         switch (opt)
         {
-            case 'd':
-                download_dir = optarg;
-                break;
             case 'e':
                 embed = atol(optarg);
                 tabbed_automagic = FALSE;
                 break;
-            case 'h':
-                home_uri = optarg;
+            case 'v':
+                be_verbose = TRUE;
                 break;
             case 'C':
                 cooperative_instances = FALSE;
