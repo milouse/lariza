@@ -86,6 +86,7 @@ static gchar *user_agent = NULL;
 static gchar *home_config_dir = NULL;
 static gchar *static_throbber = NULL;
 static gchar *dynamic_throbber = NULL;
+static gboolean save_cookies = FALSE;
 static gchar *cookies_policy = NULL;
 static gboolean be_verbose = FALSE;
 
@@ -166,13 +167,14 @@ client_new(const gchar *uri)
     c->web_view = webkit_web_view_new();
     wc = webkit_web_view_get_context(WEBKIT_WEB_VIEW(c->web_view));
 
-    if (home_config_dir != NULL && cookies_policy != NULL)
-    {
-        wcm = webkit_web_context_get_cookie_manager(wc);
+    wcm = webkit_web_context_get_cookie_manager(wc);
+    if (save_cookies && home_config_dir != NULL)
         webkit_cookie_manager_set_persistent_storage(
             wcm, g_strconcat(home_config_dir, "/cookies.txt", NULL),
             WEBKIT_COOKIE_PERSISTENT_STORAGE_TEXT
         );
+    if (cookies_policy != NULL)
+    {
         if (g_ascii_strcasecmp(cookies_policy, "never") == 0)
             webkit_cookie_manager_set_accept_policy(wcm, WEBKIT_COOKIE_POLICY_ACCEPT_NEVER);
         else if (g_ascii_strcasecmp(cookies_policy, "always") == 0)
@@ -640,6 +642,8 @@ grab_current_user_configuration(void)
     if( config_lookup_string(&cfg, "user_agent", &e))
         user_agent = g_strdup(e);
 
+    config_lookup_bool(&cfg, "save_cookies", &save_cookies);
+
     // Can be either never, always, no_third_party
     if( config_lookup_string(&cfg, "cookies_policy", &e))
         cookies_policy = g_strdup(e);
@@ -667,6 +671,7 @@ grab_current_user_configuration(void)
         fprintf(stdout, __NAME__": home_uri is %s\n", home_uri);
         fprintf(stdout, __NAME__": download_dir is %s\n", download_dir);
         fprintf(stdout, __NAME__": user_agent is %s\n", user_agent);
+        fprintf(stdout, __NAME__": save_cookies is %u\n", save_cookies);
         fprintf(stdout, __NAME__": cookies_policy is %s\n", cookies_policy);
         fprintf(stdout, __NAME__": throbber files are %s and %s\n", static_throbber, dynamic_throbber);
     }
