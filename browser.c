@@ -86,6 +86,7 @@ static gchar *user_agent = NULL;
 static gchar *home_config_dir = NULL;
 static gchar *static_throbber = NULL;
 static gchar *dynamic_throbber = NULL;
+static gchar *cookies_policy = NULL;
 static gboolean be_verbose = FALSE;
 
 
@@ -165,13 +166,20 @@ client_new(const gchar *uri)
     c->web_view = webkit_web_view_new();
     wc = webkit_web_view_get_context(WEBKIT_WEB_VIEW(c->web_view));
 
-    wcm = webkit_web_context_get_cookie_manager(wc);
-    webkit_cookie_manager_set_persistent_storage(
-      wcm, "/home/etienne/.config/lariza/cookies.txt",
-      WEBKIT_COOKIE_PERSISTENT_STORAGE_TEXT
-    );
-    webkit_cookie_manager_set_accept_policy(wcm, WEBKIT_COOKIE_POLICY_ACCEPT_NO_THIRD_PARTY);
-
+    if (home_config_dir != NULL && cookies_policy != NULL)
+    {
+        wcm = webkit_web_context_get_cookie_manager(wc);
+        webkit_cookie_manager_set_persistent_storage(
+            wcm, g_strconcat(home_config_dir, "/cookies.txt", NULL),
+            WEBKIT_COOKIE_PERSISTENT_STORAGE_TEXT
+        );
+        if (g_ascii_strcasecmp(cookies_policy, "never") == 0)
+            webkit_cookie_manager_set_accept_policy(wcm, WEBKIT_COOKIE_POLICY_ACCEPT_NEVER);
+        else if (g_ascii_strcasecmp(cookies_policy, "always") == 0)
+            webkit_cookie_manager_set_accept_policy(wcm, WEBKIT_COOKIE_POLICY_ACCEPT_ALWAYS);
+        else if (g_ascii_strcasecmp(cookies_policy, "no_third_party") == 0)
+            webkit_cookie_manager_set_accept_policy(wcm, WEBKIT_COOKIE_POLICY_ACCEPT_NO_THIRD_PARTY);
+    }
 
     webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(c->web_view), global_zoom);
     g_signal_connect(G_OBJECT(c->web_view), "notify::title",
@@ -595,63 +603,72 @@ grab_current_user_configuration(void)
     config_t cfg;
     gchar *settings_path = "/etc/lariza.cfg";
 
-    e = g_getenv("LOGNAME");
-    if (e != NULL)
+    home_config_dir = g_build_filename(g_get_user_config_dir(), __NAME__, NULL);
+    if (g_mkdir_with_parents(home_config_dir, 0755) != 0)
     {
-        home_config_dir = g_strconcat("/home/", g_strdup(e), "/.config/lariza", NULL);
-        fprintf(stderr, "Lariza home folder: %s\n", home_config_dir);
+        if (be_verbose)
+            fprintf(stderr, __NAME__": impossible to access user config folder.\n");
+        home_config_dir = NULL;
+    }
+    else
         settings_path = g_strconcat(home_config_dir, "/lariza.cfg", NULL);
 
-        config_init(&cfg);
+    if (be_verbose)
+        fprintf(stdout, __NAME__": reading config from %s\n", settings_path);
 
-        fprintf(stderr, "Opening pref file %s\n", settings_path);
+    config_init(&cfg);
 
-        /* Read the file. If there is an error, report it and exit. */
-        if(! config_read_file(&cfg, settings_path))
-        {
+    /* Read the file. If there is an error, report it and exit. */
+    if(! config_read_file(&cfg, settings_path))
+    {
+        if (be_verbose)
             fprintf(stderr, "Parse error %s: %d - %s\n",
                 config_error_file(&cfg), config_error_line(&cfg),
                 config_error_text(&cfg));
-            config_destroy(&cfg);
-            g_free(settings_path);
-            return;
-        }
+        config_destroy(&cfg);
         g_free(settings_path);
+        return;
+    }
+    g_free(settings_path);
 
-        if ( config_lookup_string(&cfg, "download_dir", &e))
-        {
-            download_dir = g_strdup(e);
-        }
+    if ( config_lookup_string(&cfg, "home_uri", &e))
+        home_uri = g_strdup(e);
 
-        if ( config_lookup_string(&cfg, "home_uri", &e))
-        {
-            home_uri = g_strdup(e);
-        }
+    if ( config_lookup_string(&cfg, "download_dir", &e))
+        download_dir = g_strdup(e);
 
-        if( config_lookup_string(&cfg, "user_agent", &e))
-        {
-            user_agent = g_strdup(e);
-        }
+    if( config_lookup_string(&cfg, "user_agent", &e))
+        user_agent = g_strdup(e);
 
-        if( config_lookup_string(&cfg, "throbber_base_file", &e))
-        {
-            static_throbber = g_strconcat(g_strdup(e), "_static.png", NULL);
-            dynamic_throbber = g_strconcat(g_strdup(e), ".gif", NULL);
-        }
+    // Can be either never, always, no_third_party
+    if( config_lookup_string(&cfg, "cookies_policy", &e))
+        cookies_policy = g_strdup(e);
 
-        l = config_lookup(&cfg, "accepted_languages");
-        if (l == NULL)
-            return;
+    if( config_lookup_string(&cfg, "throbber_base_file", &e))
+    {
+        static_throbber = g_strconcat(g_strdup(e), "_static.png", NULL);
+        dynamic_throbber = g_strconcat(g_strdup(e), ".gif", NULL);
+    }
 
+    l = config_lookup(&cfg, "accepted_languages");
+    if (l != NULL)
+    {
         if ( config_setting_is_array(l) )
         {
             accepted_language[0] = config_setting_get_string_elem(l, 0);
             accepted_language[1] = config_setting_get_string_elem(l, 1);
         }
         else if ( config_lookup_string(&cfg, "accepted_languages", &e) )
-        {
             accepted_language[0] = g_strdup(e);
-        }
+    }
+
+    if (be_verbose)
+    {
+        fprintf(stdout, __NAME__": home_uri is %s\n", home_uri);
+        fprintf(stdout, __NAME__": download_dir is %s\n", download_dir);
+        fprintf(stdout, __NAME__": user_agent is %s\n", user_agent);
+        fprintf(stdout, __NAME__": cookies_policy is %s\n", cookies_policy);
+        fprintf(stdout, __NAME__": throbber files are %s and %s\n", static_throbber, dynamic_throbber);
     }
 }
 
