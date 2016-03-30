@@ -16,13 +16,16 @@ Done and different from upstream
 
 - Various different key bindings (see the code).
 - An old fashioned throbber replace loading bar.
-- home page and download dir are configurable as parameters.
+- ~~home page and download dir are configurable as parameters.~~
+- Cookie management \o/
+- Pref file to store home page, download dir... An exemple is given in
+  `lariza.cfg`. It has to be saved as ~/.config/lariza/lariza.cfg
+
 
 In my mind
 ----------
 
 - A follow link mechanism?
-- Pref file to store home page, download dir, tabbed usage...
 - ...
 
 

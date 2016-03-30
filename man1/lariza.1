@@ -8,6 +8,7 @@ lariza \- simple web browser
 [\fB\-e\fP \fIwid\fP]
 [\fB\-C\fP]
 [\fB\-T\fP]
+[\fB\-v\fP]
 [\fIURI ...\fP]
 .\" --------------------------------------------------------------------
 .SH DESCRIPTION
@@ -26,6 +27,9 @@ Disables cooperative instances.
 .TP
 \fB\-T\fP
 Disables automatic launching of suckless' \fBtabbed\fP(1).
+.TP
+\fB\-v\fP
+Verbose mode. It print some more messages in console.
 .P
 After these options there can be any number of URIs. If no URIs are
 given, $\fBLARIZA_HOME_URI\fP will be opened.
@@ -88,6 +92,9 @@ Zoom level for WebKit viewports. Defaults to \fB1.0\fP.
 .SH FILES
 XDG variables will be used to construct these paths.
 .TP
+\fI~/.config\:/lariza\:/lariza.cfg\fP
+Optional main configuration file. See \fBlariza.cfg\fP(5).
+.TP
 \fI~/.config\:/lariza\:/adblock.black\fP
 Adblock patterns. See \fBlariza.usage\fP(1).
 .TP
@@ -113,4 +120,5 @@ was started in June 2014.
 .\" --------------------------------------------------------------------
 .SH "SEE ALSO"
 .BR lariza.usage (1),
+.BR lariza.cfg (5),
 .BR tabbed (1).

@@ -1,0 +1,56 @@
+.TH lariza.cfg 5 "2016-03-31" "lariza.cfg" "File Formats Manual"
+.\" --------------------------------------------------------------------
+.SH NAME
+lariza.cfg \- Lariza Web Browser configuration file
+.\" --------------------------------------------------------------------
+.SH SYNOPSIS
+\fB~/.config/lariza/lariza.cfg\fP
+.P
+\fBlariza\fP
+(1) obtains configuration data from the following sources in the
+following order:
+.TP
+\fB1.\fP
+environment variables
+.TP
+\fB2.\fP
+user's configuration file
+.TP
+\fB3.\fP
+command-line options
+.\" --------------------------------------------------------------------
+.SH DESCRIPTION
+User's configuration file may contain the following keys:
+.TP
+\fBhome_uri\fP
+An URI for the browser home page.
+.TP
+\fBdownload_dir\fP
+An absolute locale path to your download folder.
+.TP
+\fBsave_cookies\fP
+Must \fBlariza\fP(1) save cookies? Possible values are true or false
+
+Default is false.
+.TP
+\fBcookies_policy\fP
+Which behavior may follow \fBlariza\fP(1) regarding the cookies.
+Value must be either "always", "never", or "no_third_party"
+
+Default is "always".
+.TP
+\fBthrobber_base_file\fP
+Base path to your throbber files. Setting this will deactivate progress
+bar and put your throbber in place.
+
+You must use two different files named as follow: prefix_static.png and
+prefix.gif
+
+You are free to use the prefix of your choice. Then, the base path to
+put here will be: /absolute/path/to/your/files/prefix and lariza will
+automagically expand it to
+/absolute/path/to/your/files/prefix_static.png and
+/absolute/path/to/your/files/prefix.gif
+.\" --------------------------------------------------------------------
+.SH "SEE ALSO"
+.BR http://www.hyperrealm.com/libconfig/.
