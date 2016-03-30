@@ -25,7 +25,6 @@ $(__NAME__): browser.c
 		-D__NAME__=\"$(__NAME__)\" \
 		-D__NAME_UPPERCASE__=\"$(__NAME_UPPERCASE__)\" \
 		-D__NAME_CAPITALIZED__=\"$(__NAME_CAPITALIZED__)\" \
-		-D__MEDIA_DIR__=\"$(datarootdir)/$(__NAME__)/\" \
 		-o $@ $< \
 		`pkg-config --cflags --libs gtk+-3.0 glib-2.0 webkit2gtk-4.0`
 

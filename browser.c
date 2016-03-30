@@ -51,7 +51,7 @@ struct Client
 {
     gchar *hover_uri;
     GtkWidget *location;
-    //GtkWidget *progress;
+    GtkWidget *progress;
     GtkWidget *throbber;
     GtkWidget *top_box;
     GtkWidget *vbox;
@@ -84,6 +84,8 @@ static gchar *search_text = NULL;
 static gboolean tabbed_automagic = TRUE;
 static gchar *user_agent = NULL;
 static gchar *home_config_dir = NULL;
+static gchar *static_throbber = NULL;
+static gchar *dynamic_throbber = NULL;
 
 
 void
@@ -206,19 +208,24 @@ client_new(const gchar *uri)
     g_signal_connect(G_OBJECT(c->location), "key-press-event",
                      G_CALLBACK(key_location), c);
 
-    /* XXX Progress bars don't work/look as intended anymore. Level bars
-     * are a dirty workaround (kind of). */
-    /*c->progress = gtk_level_bar_new();
-    gtk_level_bar_set_value(GTK_LEVEL_BAR(c->progress), 0);
-    gtk_widget_set_size_request(c->progress, 100, -1);*/
-
-    c->throbber = gtk_image_new_from_file(__MEDIA_DIR__"mz_throbber_static.png");
-    gtk_widget_set_size_request(c->throbber, 32, -1);
-
     c->top_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_start(GTK_BOX(c->top_box), c->location, TRUE, TRUE, 0);
-    //gtk_box_pack_start(GTK_BOX(c->top_box), c->progress, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(c->top_box), c->throbber, FALSE, FALSE, 0);
+
+    if (static_throbber != NULL)
+    {
+        c->throbber = gtk_image_new_from_file(static_throbber);
+        gtk_widget_set_size_request(c->throbber, 32, -1);
+        gtk_box_pack_start(GTK_BOX(c->top_box), c->throbber, FALSE, FALSE, 0);
+    }
+    else
+    {
+        /* XXX Progress bars don't work/look as intended anymore. Level bars
+         * are a dirty workaround (kind of). */
+        c->progress = gtk_level_bar_new();
+        gtk_level_bar_set_value(GTK_LEVEL_BAR(c->progress), 0);
+        gtk_widget_set_size_request(c->progress, 100, -1);
+        gtk_box_pack_start(GTK_BOX(c->top_box), c->progress, FALSE, FALSE, 0);
+    }
 
     c->vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_start(GTK_BOX(c->vbox), c->top_box, FALSE, FALSE, 0);
@@ -328,11 +335,10 @@ changed_load_progress(GObject *obj, GParamSpec *pspec, gpointer data)
     gdouble p;
 
     p = webkit_web_view_get_estimated_load_progress(WEBKIT_WEB_VIEW(c->web_view));
-    //gtk_level_bar_set_value(GTK_LEVEL_BAR(c->progress), p);
-    if (p == 1.0)
-    {
-        gtk_image_set_from_file(GTK_IMAGE(c->throbber), __MEDIA_DIR__"mz_throbber_static.png");
-    }
+    if (static_throbber == NULL)
+        gtk_level_bar_set_value(GTK_LEVEL_BAR(c->progress), p);
+    else if (p == 1.0)
+        gtk_image_set_from_file(GTK_IMAGE(c->throbber), static_throbber);
 }
 
 void
@@ -359,10 +365,10 @@ changed_uri(GObject *obj, GParamSpec *pspec, gpointer data)
     const gchar *t;
     struct Client *c = (struct Client *)data;
 
-    gtk_image_set_from_animation(
-        GTK_IMAGE(c->throbber),
-        gdk_pixbuf_animation_new_from_file(__MEDIA_DIR__"mz_throbber.gif", NULL)
-    );
+    if (static_throbber != NULL)
+        gtk_image_set_from_animation(
+            GTK_IMAGE(c->throbber),
+            gdk_pixbuf_animation_new_from_file(dynamic_throbber, NULL));
 
     t = webkit_web_view_get_uri(WEBKIT_WEB_VIEW(c->web_view));
     gtk_entry_set_text(GTK_ENTRY(c->location), (t == NULL ? __NAME__ : t));
@@ -613,6 +619,12 @@ grab_current_user_configuration(void)
             user_agent = g_strdup(e);
         }
 
+        if( config_lookup_string(&cfg, "throbber_base_file", &e))
+        {
+            static_throbber = g_strconcat(g_strdup(e), "_static.png", NULL);
+            dynamic_throbber = g_strconcat(g_strdup(e), ".gif", NULL);
+        }
+
         l = config_lookup(&cfg, "accepted_languages");
         if (l == NULL)
             return;
@@ -725,17 +737,12 @@ key_location(GtkWidget *widget, GdkEvent *event, gpointer data)
                     }
                     else if (!keywords_try_search(WEBKIT_WEB_VIEW(c->web_view), t))
                     {
-                        gtk_image_set_from_animation(
-                            GTK_IMAGE(c->throbber),
-                            gdk_pixbuf_animation_new_from_file(__MEDIA_DIR__"mz_throbber.gif", NULL)
-                        );
                         f = ensure_uri_scheme(t);
                         webkit_web_view_load_uri(WEBKIT_WEB_VIEW(c->web_view), f);
                         g_free(f);
                     }
                     return TRUE;
                 case GDK_KEY_Escape:
-                    gtk_image_set_from_file(GTK_IMAGE(c->throbber), __MEDIA_DIR__"mz_throbber_static.png");
                     t = webkit_web_view_get_uri(WEBKIT_WEB_VIEW(c->web_view));
                     gtk_entry_set_text(GTK_ENTRY(c->location),
                                        (t == NULL ? __NAME__ : t));
@@ -842,8 +849,10 @@ key_web_view(GtkWidget *widget, GdkEvent *event, gpointer data)
                     return TRUE;*/
                 case GDK_KEY_Escape:
                     webkit_web_view_stop_loading(WEBKIT_WEB_VIEW(c->web_view));
-                    gtk_image_set_from_file(GTK_IMAGE(c->throbber), __MEDIA_DIR__"mz_throbber_static.png");
-                    //gtk_level_bar_set_value(GTK_LEVEL_BAR(c->progress), 0);
+                    if (static_throbber != NULL)
+                        gtk_image_set_from_file(GTK_IMAGE(c->throbber), static_throbber);
+                    else
+                        gtk_level_bar_set_value(GTK_LEVEL_BAR(c->progress), 0);
             }
         }
     }
