@@ -120,6 +120,7 @@ client_new(const gchar *uri)
     WebKitWebContext *wc;
     gchar *f;
     WebKitSettings *ws;
+    WebKitCookieManager *wcm;
 
     if (uri != NULL && cooperative_instances && !cooperative_alone)
     {
@@ -162,6 +163,14 @@ client_new(const gchar *uri)
 
     c->web_view = webkit_web_view_new();
     wc = webkit_web_view_get_context(WEBKIT_WEB_VIEW(c->web_view));
+
+    wcm = webkit_web_context_get_cookie_manager(wc);
+    webkit_cookie_manager_set_persistent_storage(
+      wcm, "/home/etienne/.config/lariza/cookies.txt",
+      WEBKIT_COOKIE_PERSISTENT_STORAGE_TEXT
+    );
+    webkit_cookie_manager_set_accept_policy(wcm, WEBKIT_COOKIE_POLICY_ACCEPT_NO_THIRD_PARTY);
+
 
     webkit_web_view_set_zoom_level(WEBKIT_WEB_VIEW(c->web_view), global_zoom);
     g_signal_connect(G_OBJECT(c->web_view), "notify::title",
