@@ -1100,7 +1100,6 @@ main(int argc, char **argv)
     gtk_init(&argc, &argv);
 
     grab_environment_configuration();
-    grab_current_user_configuration();
 
     while ((opt = getopt(argc, argv, "e:vCT")) != -1)
     {
@@ -1124,6 +1123,8 @@ main(int argc, char **argv)
                 exit(EXIT_FAILURE);
         }
     }
+
+    grab_current_user_configuration();
 
     keywords_load();
     if (cooperative_instances)
