@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
+#include <libconfig.h>
 
 #include <gtk/gtk.h>
 #include <gtk/gtkx.h>
@@ -32,6 +33,7 @@ static void downloadmanager_cancel(GtkToolButton *, gpointer data);
 static void downloadmanager_setup(void);
 static gchar *ensure_uri_scheme(const gchar *);
 static void grab_environment_configuration(void);
+static void grab_current_user_configuration(void);
 static void hover_web_view(WebKitWebView *, WebKitHitTestResult *, guint, gpointer);
 static gboolean key_downloadmanager(GtkWidget *, GdkEvent *, gpointer);
 static gboolean key_location(GtkWidget *, GdkEvent *, gpointer);
@@ -81,6 +83,7 @@ static GHashTable *keywords = NULL;
 static gchar *search_text = NULL;
 static gboolean tabbed_automagic = TRUE;
 static gchar *user_agent = NULL;
+static gchar *home_config_dir = NULL;
 
 
 void
@@ -565,6 +568,68 @@ grab_environment_configuration(void)
 }
 
 void
+grab_current_user_configuration(void)
+{
+    const gchar *e;
+    const config_setting_t *l;
+    config_t cfg;
+    gchar *settings_path = "/etc/lariza.cfg";
+
+    e = g_getenv("LOGNAME");
+    if (e != NULL)
+    {
+        home_config_dir = g_strconcat("/home/", g_strdup(e), "/.config/lariza", NULL);
+        fprintf(stderr, "Lariza home folder: %s\n", home_config_dir);
+        settings_path = g_strconcat(home_config_dir, "/lariza.cfg", NULL);
+
+        config_init(&cfg);
+
+        fprintf(stderr, "Opening pref file %s\n", settings_path);
+
+        /* Read the file. If there is an error, report it and exit. */
+        if(! config_read_file(&cfg, settings_path))
+        {
+            fprintf(stderr, "Parse error %s: %d - %s\n",
+                config_error_file(&cfg), config_error_line(&cfg),
+                config_error_text(&cfg));
+            config_destroy(&cfg);
+            g_free(settings_path);
+            return;
+        }
+        g_free(settings_path);
+
+        if ( config_lookup_string(&cfg, "download_dir", &e))
+        {
+            download_dir = g_strdup(e);
+        }
+
+        if ( config_lookup_string(&cfg, "home_uri", &e))
+        {
+            home_uri = g_strdup(e);
+        }
+
+        if( config_lookup_string(&cfg, "user_agent", &e))
+        {
+            user_agent = g_strdup(e);
+        }
+
+        l = config_lookup(&cfg, "accepted_languages");
+        if (l == NULL)
+            return;
+
+        if ( config_setting_is_array(l) )
+        {
+            accepted_language[0] = config_setting_get_string_elem(l, 0);
+            accepted_language[1] = config_setting_get_string_elem(l, 1);
+        }
+        else if ( config_lookup_string(&cfg, "accepted_languages", &e) )
+        {
+            accepted_language[0] = g_strdup(e);
+        }
+    }
+}
+
+void
 hover_web_view(WebKitWebView *web_view, WebKitHitTestResult *ht, guint modifiers,
                gpointer data)
 {
@@ -1012,6 +1077,7 @@ main(int argc, char **argv)
     gtk_init(&argc, &argv);
 
     grab_environment_configuration();
+    grab_current_user_configuration();
 
     while ((opt = getopt(argc, argv, "d:e:h:CT")) != -1)
     {

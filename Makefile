@@ -1,4 +1,5 @@
 CFLAGS += -Wall -Wextra -Wno-unused-parameter -O3
+LDFLAGS += -lconfig
 __NAME__ = lariza
 __NAME_UPPERCASE__ = `echo $(__NAME__) | sed 's/.*/\U&/'`
 __NAME_CAPITALIZED__ = `echo $(__NAME__) | sed 's/^./\U&\E/'`
