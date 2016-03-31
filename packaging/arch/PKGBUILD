@@ -1,0 +1,26 @@
+# Maintainer: Étienne Deparis <etienne on host: depar dot is>
+pkgname=lariza-git
+pkgver=42
+pkgrel=1
+pkgdesc="Simple WebKit2GTK+ Browser"
+arch=('i686' 'x86_64')
+url="https://github.com/milouse/lariza"
+license=('custom:PIZZA-WARE')
+depends=('webkit2gtk' 'libconfig')
+provides=('lariza')
+conflicts=('lariza')
+makedepends=('git')
+optdepends=('tabbed: for grouping multiple web views into one window')
+source=('git://github.com/milouse/lariza.git#branch=mybrowser')
+md5sums=('SKIP')
+
+build() {
+  cd "$srcdir/${pkgname%-git}"
+  CFLAG='-march=x86-64 -mtune=generic' CXXFLAGS= LDFLAGS= make
+}
+
+package() {
+  cd "$srcdir/${pkgname%-git}"
+  make DESTDIR="${pkgdir}/usr" install
+  install -D -m644 LICENSE "$pkgdir/usr/share/licenses/${pkgname%-git}/LICENSE"
+}
