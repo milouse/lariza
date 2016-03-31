@@ -29,6 +29,13 @@ In my mind
 - Stay tuned about embedding mozilla? [Some](http://chrislord.net/index.php/2016/03/08/state-of-embedding-in-gecko/) [bits](https://dutherenverseauborddelatable.wordpress.com/2016/03/07/the-gecko-monoculture/)
 - ...
 
+Note about throbbers
+--------------------
+
+The various pictures included in the media folder of this repository are
+not free. Thus, they will never be included in the Makefile or any
+package done by me.
+
 
 Original README follows:
 
