@@ -26,6 +26,7 @@ In my mind
 ----------
 
 - A follow link mechanism?
+- Stay tuned about embedding mozilla? [Some](http://chrislord.net/index.php/2016/03/08/state-of-embedding-in-gecko/) [bits](https://dutherenverseauborddelatable.wordpress.com/2016/03/07/the-gecko-monoculture/)
 - ...
 
 
@@ -54,6 +55,7 @@ The following C libraries are required:
 
 - GTK+ 3
 - WebKit2 API for GTK+ 3
+- libconfig
 
 lariza expects to be run on a POSIX-ish operating system.
 
