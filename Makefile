@@ -9,11 +9,9 @@ INSTALL_PROGRAM = $(INSTALL)
 INSTALL_DATA = $(INSTALL) -m 644
 
 DESTDIR = /usr/local
-exec_prefix = $(DESTDIR)
-bindir = $(exec_prefix)/bin
-datarootdir = $(DESTDIR)/share
-mandir = $(datarootdir)/man
-man1dir = $(mandir)/man1
+bindir = $(DESTDIR)/bin
+datadir = $(DESTDIR)/share/$(__NAME__)
+mandir = $(DESTDIR)/man
 
 
 .PHONY: all clean install installdirs
@@ -38,11 +36,14 @@ we_adblock.so: we_adblock.c
 
 install: all installdirs
 	$(INSTALL_PROGRAM) $(__NAME__) $(bindir)/$(__NAME__)
-	$(INSTALL_DATA) man1/$(__NAME__).1 $(man1dir)/$(__NAME__).1
-	$(INSTALL_DATA) man1/$(__NAME__).usage.1 $(man1dir)/$(__NAME__).usage.1
+	$(INSTALL_PROGRAM) we_adblock.so $(datadir)/we_adblock.so
+	$(INSTALL_DATA) $(__NAME__).cfg $(datadir)/$(__NAME__).cfg.example
+	$(INSTALL_DATA) man1/$(__NAME__).1 $(mandir)/man1/$(__NAME__).1
+	$(INSTALL_DATA) man1/$(__NAME__).usage.1 $(mandir)/man1/$(__NAME__).usage.1
+	$(INSTALL_DATA) man1/$(__NAME__).cfg.5 $(mandir)/man5/$(__NAME__).cfg.5
 
 installdirs:
-	mkdir -p $(bindir) $(man1dir)
+	mkdir -p $(bindir) $(datadir) $(mandir)/man1 $(mandir)/man5
 
 clean:
 	rm -f $(__NAME__) we_adblock.so
