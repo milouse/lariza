@@ -234,7 +234,6 @@ client_new(const gchar *uri)
     if (static_throbber != NULL)
     {
         c->throbber = gtk_image_new_from_file(static_throbber);
-        gtk_widget_set_size_request(c->throbber, 32, -1);
         gtk_box_pack_start(GTK_BOX(c->top_box), c->throbber, FALSE, FALSE, 0);
     }
     else
@@ -243,7 +242,6 @@ client_new(const gchar *uri)
          * are a dirty workaround (kind of). */
         c->progress = gtk_level_bar_new();
         gtk_level_bar_set_value(GTK_LEVEL_BAR(c->progress), 0);
-        gtk_widget_set_size_request(c->progress, 100, -1);
         gtk_box_pack_start(GTK_BOX(c->top_box), c->progress, FALSE, FALSE, 0);
     }
 
