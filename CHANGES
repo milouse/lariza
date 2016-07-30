@@ -1,6 +1,15 @@
 Release history for lariza
 
 next
+  [Changed]
+  - Web extensions are now looked for in ~/.config/lariza/web_extensions.
+
+v16.06  2016-06-26
+  [Changed]
+  - Except for the default window size, there are no hardcoded pixel
+    values anymore. Should make it a little easier to run lariza on
+    HiDPI screens. (Sorry, not tested, I don't have one.)
+
   [Added]
   - New key bindings F2 and F3: Select previous or next search result
     on page.
