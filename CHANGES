@@ -2,8 +2,8 @@ Release history for lariza
 
 next
   [Added]
-  - New key bindings F2 and F3: Go backward and forward, just like the
-    existing mouse key binds do.
+  - New key bindings F2 and F3: Select previous or next search result
+    on page.
 
 v16.01  2016-01-05
   [Fixed]
