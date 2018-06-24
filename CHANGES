@@ -1,5 +1,9 @@
 Release history for lariza
 
+v18.06  2018-06-24
+  - This is a maintenance release, due to the project moving away from
+    GitHub. No code changes.
+
 v18.03  2018-03-17
   [Fixed]
   - Accidentally opening a context menu and then issuing a middle click
