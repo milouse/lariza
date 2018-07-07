@@ -11,6 +11,7 @@
 #include <gdk/gdkkeysyms.h>
 #include <gio/gio.h>
 #include <webkit2/webkit2.h>
+#include <JavaScriptCore/JavaScript.h>
 
 
 static void client_destroy(GtkWidget *, gpointer);
@@ -33,8 +34,11 @@ static gboolean downloadmanager_delete(GtkWidget *, gpointer);
 static void downloadmanager_setup(void);
 static gchar *ensure_uri_scheme(const gchar *);
 static void external_handler_run(GSimpleAction *, GVariant *, gpointer);
+static void feed_icon(gpointer, gchar *);
 static void grab_environment_configuration(void);
+static void grab_feeds_finished(GObject *, GAsyncResult *, gpointer);
 static void hover_web_view(WebKitWebView *, WebKitHitTestResult *, guint, gpointer);
+static void icon_location(GtkEntry *, GtkEntryIconPosition, GdkEvent *, gpointer);
 static gboolean key_common(GtkWidget *, GdkEvent *, gpointer);
 static gboolean key_downloadmanager(GtkWidget *, GdkEvent *, gpointer);
 static gboolean key_location(GtkWidget *, GdkEvent *, gpointer);
@@ -55,6 +59,7 @@ struct Client
 {
     gchar *external_handler_uri;
     gchar *hover_uri;
+    gchar *feed_html;
     GtkWidget *location;
     GtkWidget *vbox;
     GtkWidget *web_view;
@@ -87,6 +92,46 @@ static GHashTable *keywords = NULL;
 static gchar *search_text = NULL;
 static gboolean tabbed_automagic = TRUE;
 static gchar *user_agent = NULL;
+
+static gchar *feed_html_header =
+"<!DOCTYPE html>"
+"<html>"
+"    <head>"
+"        <title>Feeds</title>"
+"    </head>"
+"    <body>"
+"        <p>Feeds found on this page:</p>"
+"        <ul>"
+;
+
+static gchar *feed_html_footer =
+"        </ul>"
+"    </body>"
+"</html>"
+;
+
+static gchar *grab_feeds =
+"a = document.querySelectorAll('"
+"    html > head > link[rel=\"alternate\"][href][type=\"application/atom+xml\"],"
+"    html > head > link[rel=\"alternate\"][href][type=\"application/rss+xml\"]"
+"');"
+"if (a.length == 0)"
+"    null;"
+"else"
+"{"
+"    out = '';"
+"    for (i = 0; i < a.length; i++)"
+"    {"
+"        url = encodeURIComponent(a[i].href);"
+"        if ('title' in a[i] && a[i].title != '')"
+"            title = encodeURIComponent(a[i].title);"
+"        else"
+"            title = url;"
+"        out += '<li><a href=\"' + url + '\">' + title + '</a></li>';"
+"    }"
+"    out;"
+"}"
+;
 
 
 void
@@ -214,6 +259,8 @@ client_new(const gchar *uri, WebKitWebView *related_wv, gboolean show)
     c->location = gtk_entry_new();
     g_signal_connect(G_OBJECT(c->location), "key-press-event",
                      G_CALLBACK(key_location), c);
+    g_signal_connect(G_OBJECT(c->location), "icon-release",
+                     G_CALLBACK(icon_location), c);
 
     c->vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_start(GTK_BOX(c->vbox), c->location, FALSE, FALSE, 0);
@@ -327,7 +374,17 @@ changed_load_progress(GObject *obj, GParamSpec *pspec, gpointer data)
 
     p = webkit_web_view_get_estimated_load_progress(WEBKIT_WEB_VIEW(c->web_view));
     if (p == 1)
+    {
         p = 0;
+
+        /* The page has loaded fully. We now run a short JavaScript
+         * snippet that operates on the DOM. It tries to grab all
+         * occurences of <link rel="alternate" ...>, i.e. RSS/Atom feed
+         * references. */
+        webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(c->web_view),
+                                       grab_feeds, NULL,
+                                       grab_feeds_finished, c);
+    }
     gtk_entry_set_progress_fraction(GTK_ENTRY(c->location), p);
 }
 
@@ -545,7 +602,8 @@ ensure_uri_scheme(const gchar *t)
     if (!g_str_has_prefix(f, "http:") &&
         !g_str_has_prefix(f, "https:") &&
         !g_str_has_prefix(f, "file:") &&
-        !g_str_has_prefix(f, "about:"))
+        !g_str_has_prefix(f, "about:") &&
+        !g_str_has_prefix(f, "data:"))
     {
         g_free(f);
         fabs = realpath(t, NULL);
@@ -583,6 +641,31 @@ external_handler_run(GSimpleAction *simple, GVariant *param, gpointer data)
     }
     else
         g_spawn_close_pid(pid);
+}
+
+void feed_icon(gpointer user_data, gchar *feed_html)
+{
+    struct Client *c = (struct Client *)user_data;
+
+    if (feed_html != NULL)
+    {
+        gtk_entry_set_icon_from_icon_name(GTK_ENTRY(c->location),
+                                          GTK_ENTRY_ICON_PRIMARY,
+                                          "application-rss+xml-symbolic");
+        gtk_entry_set_icon_activatable(GTK_ENTRY(c->location),
+                                       GTK_ENTRY_ICON_PRIMARY,
+                                       TRUE);
+
+        if (c->feed_html != NULL)
+            g_free(c->feed_html);
+        c->feed_html = g_strdup(feed_html);
+    }
+    else
+    {
+        gtk_entry_set_icon_from_icon_name(GTK_ENTRY(c->location),
+                                          GTK_ENTRY_ICON_PRIMARY,
+                                          NULL);
+    }
 }
 
 void
@@ -628,6 +711,48 @@ grab_environment_configuration(void)
 }
 
 void
+grab_feeds_finished(GObject *object, GAsyncResult *result, gpointer data)
+{
+    WebKitJavascriptResult *js_result;
+    JSValueRef value;
+    JSGlobalContextRef context;
+    GError *err = NULL;
+    JSStringRef js_str_value;
+    gchar *str_value;
+    gsize str_length;
+
+    /* This was taken almost verbatim from the example in WebKit's
+     * documentation. */
+
+    js_result = webkit_web_view_run_javascript_finish(WEBKIT_WEB_VIEW(object),
+                                                      result, &err);
+    if (!js_result)
+    {
+        fprintf(stderr, __NAME__": Error running javascript: %s\n", err->message);
+        g_error_free(err);
+        return;
+    }
+
+    context = webkit_javascript_result_get_global_context(js_result);
+    value = webkit_javascript_result_get_value(js_result);
+
+    if (JSValueIsString(context, value))
+    {
+        js_str_value = JSValueToStringCopy(context, value, NULL);
+        str_length = JSStringGetMaximumUTF8CStringSize(js_str_value);
+        str_value = (gchar *)g_malloc(str_length);
+        JSStringGetUTF8CString(js_str_value, str_value, str_length);
+        JSStringRelease(js_str_value);
+        feed_icon(data, str_value);
+        g_free(str_value);
+    }
+    else
+        feed_icon(data, NULL);
+
+    webkit_javascript_result_unref(js_result);
+}
+
+void
 hover_web_view(WebKitWebView *web_view, WebKitHitTestResult *ht, guint modifiers,
                gpointer data)
 {
@@ -653,6 +778,36 @@ hover_web_view(WebKitWebView *web_view, WebKitHitTestResult *ht, guint modifiers
                 g_free(c->hover_uri);
             c->hover_uri = NULL;
         }
+    }
+}
+
+void
+icon_location(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer data)
+{
+    struct Client *c = (struct Client *)data;
+    gchar *d;
+
+    if (c->feed_html != NULL)
+    {
+        /* What we're actually trying to do is show a simple HTML page
+         * that lists all the feeds on the current page. The function
+         * webkit_web_view_load_html() looks like the proper way to do
+         * that. Sad thing is, it doesn't create a history entry, but
+         * instead simply replaces the content of the current page. This
+         * is not what we want.
+         *
+         * RFC 2397 [0] defines the data URI scheme [1]. We abuse this
+         * mechanism to show my custom HTML snippet *and* create a
+         * history entry.
+         *
+         * [0]: https://tools.ietf.org/html/rfc2397
+         * [1]: https://en.wikipedia.org/wiki/Data_URI_scheme */
+        d = g_strdup_printf("data:text/html,%s%s%s",
+                            feed_html_header,
+                            c->feed_html,
+                            feed_html_footer);
+        webkit_web_view_load_uri(WEBKIT_WEB_VIEW(c->web_view), d);
+        g_free(d);
     }
 }
 
