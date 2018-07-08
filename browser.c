@@ -97,6 +97,7 @@ static gchar *feed_html_header =
 "<!DOCTYPE html>"
 "<html>"
 "    <head>"
+"        <meta charset=\"UTF-8\">"
 "        <title>Feeds</title>"
 "    </head>"
 "    <body>"
