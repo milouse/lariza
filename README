@@ -82,8 +82,6 @@ Background information
   have persistent storage, nor a plugin system, nor cloud sync, nor
   bookmarks.
 
-  lariza tries not to exceed 1000 lines of code.
-
 
  About the name
 
