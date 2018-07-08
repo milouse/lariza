@@ -262,6 +262,14 @@ client_new(const gchar *uri, WebKitWebView *related_wv, gboolean show)
                      G_CALLBACK(key_location), c);
     g_signal_connect(G_OBJECT(c->location), "icon-release",
                      G_CALLBACK(icon_location), c);
+    /* XXX This is a workaround. Setting this to NULL (which is done in
+     * feed_icon() if no feed has been detected) adds a little padding
+     * left of the text. Not sure why. The point of this call right
+     * here is to have that padding right from the start. This avoids a
+     * graphical artifact. */
+    gtk_entry_set_icon_from_icon_name(GTK_ENTRY(c->location),
+                                      GTK_ENTRY_ICON_PRIMARY,
+                                      NULL);
 
     c->vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_start(GTK_BOX(c->vbox), c->location, FALSE, FALSE, 0);
