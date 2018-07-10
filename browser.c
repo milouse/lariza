@@ -34,7 +34,6 @@ static gboolean downloadmanager_delete(GtkWidget *, gpointer);
 static void downloadmanager_setup(void);
 static gchar *ensure_uri_scheme(const gchar *);
 static void external_handler_run(GSimpleAction *, GVariant *, gpointer);
-static void feed_icon(gpointer, gchar *);
 static void grab_environment_configuration(void);
 static void grab_feeds_finished(GObject *, GAsyncResult *, gpointer);
 static void hover_web_view(WebKitWebView *, WebKitHitTestResult *, guint, gpointer);
@@ -263,10 +262,10 @@ client_new(const gchar *uri, WebKitWebView *related_wv, gboolean show)
     g_signal_connect(G_OBJECT(c->location), "icon-release",
                      G_CALLBACK(icon_location), c);
     /* XXX This is a workaround. Setting this to NULL (which is done in
-     * feed_icon() if no feed has been detected) adds a little padding
-     * left of the text. Not sure why. The point of this call right
-     * here is to have that padding right from the start. This avoids a
-     * graphical artifact. */
+     * grab_feeds_finished() if no feed has been detected) adds a little
+     * padding left of the text. Not sure why. The point of this call
+     * right here is to have that padding right from the start. This
+     * avoids a graphical artifact. */
     gtk_entry_set_icon_from_icon_name(GTK_ENTRY(c->location),
                                       GTK_ENTRY_ICON_PRIMARY,
                                       NULL);
@@ -652,31 +651,6 @@ external_handler_run(GSimpleAction *simple, GVariant *param, gpointer data)
         g_spawn_close_pid(pid);
 }
 
-void feed_icon(gpointer user_data, gchar *feed_html)
-{
-    struct Client *c = (struct Client *)user_data;
-
-    if (feed_html != NULL)
-    {
-        gtk_entry_set_icon_from_icon_name(GTK_ENTRY(c->location),
-                                          GTK_ENTRY_ICON_PRIMARY,
-                                          "application-rss+xml-symbolic");
-        gtk_entry_set_icon_activatable(GTK_ENTRY(c->location),
-                                       GTK_ENTRY_ICON_PRIMARY,
-                                       TRUE);
-
-        if (c->feed_html != NULL)
-            g_free(c->feed_html);
-        c->feed_html = g_strdup(feed_html);
-    }
-    else
-    {
-        gtk_entry_set_icon_from_icon_name(GTK_ENTRY(c->location),
-                                          GTK_ENTRY_ICON_PRIMARY,
-                                          NULL);
-    }
-}
-
 void
 grab_environment_configuration(void)
 {
@@ -722,13 +696,16 @@ grab_environment_configuration(void)
 void
 grab_feeds_finished(GObject *object, GAsyncResult *result, gpointer data)
 {
+    struct Client *c = (struct Client *)data;
     WebKitJavascriptResult *js_result;
     JSValueRef value;
     JSGlobalContextRef context;
     GError *err = NULL;
     JSStringRef js_str_value;
-    gchar *str_value;
     gsize str_length;
+
+    g_free(c->feed_html);
+    c->feed_html = NULL;
 
     /* This was taken almost verbatim from the example in WebKit's
      * documentation. */
@@ -749,14 +726,23 @@ grab_feeds_finished(GObject *object, GAsyncResult *result, gpointer data)
     {
         js_str_value = JSValueToStringCopy(context, value, NULL);
         str_length = JSStringGetMaximumUTF8CStringSize(js_str_value);
-        str_value = (gchar *)g_malloc(str_length);
-        JSStringGetUTF8CString(js_str_value, str_value, str_length);
+        c->feed_html = (gchar *)g_malloc(str_length);
+        JSStringGetUTF8CString(js_str_value, c->feed_html, str_length);
         JSStringRelease(js_str_value);
-        feed_icon(data, str_value);
-        g_free(str_value);
+
+        gtk_entry_set_icon_from_icon_name(GTK_ENTRY(c->location),
+                                          GTK_ENTRY_ICON_PRIMARY,
+                                          "application-rss+xml-symbolic");
+        gtk_entry_set_icon_activatable(GTK_ENTRY(c->location),
+                                       GTK_ENTRY_ICON_PRIMARY,
+                                       TRUE);
     }
     else
-        feed_icon(data, NULL);
+    {
+        gtk_entry_set_icon_from_icon_name(GTK_ENTRY(c->location),
+                                          GTK_ENTRY_ICON_PRIMARY,
+                                          NULL);
+    }
 
     webkit_javascript_result_unref(js_result);
 }
