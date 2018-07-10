@@ -92,47 +92,6 @@ static gchar *search_text = NULL;
 static gboolean tabbed_automagic = TRUE;
 static gchar *user_agent = NULL;
 
-static gchar *feed_html_header =
-"<!DOCTYPE html>"
-"<html>"
-"    <head>"
-"        <meta charset=\"UTF-8\">"
-"        <title>Feeds</title>"
-"    </head>"
-"    <body>"
-"        <p>Feeds found on this page:</p>"
-"        <ul>"
-;
-
-static gchar *feed_html_footer =
-"        </ul>"
-"    </body>"
-"</html>"
-;
-
-static gchar *grab_feeds =
-"a = document.querySelectorAll('"
-"    html > head > link[rel=\"alternate\"][href][type=\"application/atom+xml\"],"
-"    html > head > link[rel=\"alternate\"][href][type=\"application/rss+xml\"]"
-"');"
-"if (a.length == 0)"
-"    null;"
-"else"
-"{"
-"    out = '';"
-"    for (i = 0; i < a.length; i++)"
-"    {"
-"        url = encodeURIComponent(a[i].href);"
-"        if ('title' in a[i] && a[i].title != '')"
-"            title = encodeURIComponent(a[i].title);"
-"        else"
-"            title = url;"
-"        out += '<li><a href=\"' + url + '\">' + title + '</a></li>';"
-"    }"
-"    out;"
-"}"
-;
-
 
 void
 client_destroy(GtkWidget *widget, gpointer data)
@@ -379,14 +338,35 @@ changed_load_progress(GObject *obj, GParamSpec *pspec, gpointer data)
 {
     struct Client *c = (struct Client *)data;
     gdouble p;
+    gchar *grab_feeds =
+        "a = document.querySelectorAll('"
+        "    html > head > link[rel=\"alternate\"][href][type=\"application/atom+xml\"],"
+        "    html > head > link[rel=\"alternate\"][href][type=\"application/rss+xml\"]"
+        "');"
+        "if (a.length == 0)"
+        "    null;"
+        "else"
+        "{"
+        "    out = '';"
+        "    for (i = 0; i < a.length; i++)"
+        "    {"
+        "        url = encodeURIComponent(a[i].href);"
+        "        if ('title' in a[i] && a[i].title != '')"
+        "            title = encodeURIComponent(a[i].title);"
+        "        else"
+        "            title = url;"
+        "        out += '<li><a href=\"' + url + '\">' + title + '</a></li>';"
+        "    }"
+        "    out;"
+        "}";
 
     p = webkit_web_view_get_estimated_load_progress(WEBKIT_WEB_VIEW(c->web_view));
     if (p == 1)
     {
         p = 0;
 
-        /* The page has loaded fully. We now run a short JavaScript
-         * snippet that operates on the DOM. It tries to grab all
+        /* The page has loaded fully. We now run a the short JavaScript
+         * snippet above that operates on the DOM. It tries to grab all
          * occurences of <link rel="alternate" ...>, i.e. RSS/Atom feed
          * references. */
         webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(c->web_view),
@@ -777,10 +757,26 @@ hover_web_view(WebKitWebView *web_view, WebKitHitTestResult *ht, guint modifiers
 }
 
 void
-icon_location(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer data)
+icon_location(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event,
+              gpointer data)
 {
     struct Client *c = (struct Client *)data;
     gchar *d;
+    gchar *data_template =
+        "data:text/html,"
+        "<!DOCTYPE html>"
+        "<html>"
+        "    <head>"
+        "        <meta charset=\"UTF-8\">"
+        "        <title>Feeds</title>"
+        "    </head>"
+        "    <body>"
+        "        <p>Feeds found on this page:</p>"
+        "        <ul>"
+        "        %s"
+        "        </ul>"
+        "    </body>"
+        "</html>";
 
     if (c->feed_html != NULL)
     {
@@ -797,10 +793,7 @@ icon_location(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, g
          *
          * [0]: https://tools.ietf.org/html/rfc2397
          * [1]: https://en.wikipedia.org/wiki/Data_URI_scheme */
-        d = g_strdup_printf("data:text/html,%s%s%s",
-                            feed_html_header,
-                            c->feed_html,
-                            feed_html_footer);
+        d = g_strdup_printf(data_template, c->feed_html);
         webkit_web_view_load_uri(WEBKIT_WEB_VIEW(c->web_view), d);
         g_free(d);
     }
