@@ -4,6 +4,13 @@ next
   [Added]
   - The input bar now shows an indicator for web feeds.
 
+    The icon used for this purpose is the stock icon called
+    "application-rss+xml-symbolic". It is somewhat "non-standard", i.e.
+    not defined by [0], but appears to be present in many icon themes.
+    Let me know if it doesn't work for you.
+
+    [0]: https://standards.freedesktop.org/icon-naming-spec/icon-naming-spec-latest.html
+
 v18.06  2018-06-24
   - This is a maintenance release, due to the project moving away from
     GitHub. No code changes.
