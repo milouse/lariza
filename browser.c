@@ -365,7 +365,7 @@ changed_load_progress(GObject *obj, GParamSpec *pspec, gpointer data)
     {
         p = 0;
 
-        /* The page has loaded fully. We now run a the short JavaScript
+        /* The page has loaded fully. We now run the short JavaScript
          * snippet above that operates on the DOM. It tries to grab all
          * occurences of <link rel="alternate" ...>, i.e. RSS/Atom feed
          * references. */
