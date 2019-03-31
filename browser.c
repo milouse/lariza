@@ -678,17 +678,18 @@ grab_feeds_finished(GObject *object, GAsyncResult *result, gpointer data)
 {
     struct Client *c = (struct Client *)data;
     WebKitJavascriptResult *js_result;
-    JSValueRef value;
-    JSGlobalContextRef context;
+    JSCValue *value;
+    JSCException *exception;
     GError *err = NULL;
-    JSStringRef js_str_value;
-    gsize str_length;
+    gchar *str_value;
 
     g_free(c->feed_html);
     c->feed_html = NULL;
 
     /* This was taken almost verbatim from the example in WebKit's
-     * documentation. */
+     * documentation:
+     *
+     * https://webkitgtk.org/reference/webkit2gtk/stable/WebKitWebView.html#webkit-web-view-run-javascript-finish */
 
     js_result = webkit_web_view_run_javascript_finish(WEBKIT_WEB_VIEW(object),
                                                       result, &err);
@@ -699,16 +700,18 @@ grab_feeds_finished(GObject *object, GAsyncResult *result, gpointer data)
         return;
     }
 
-    context = webkit_javascript_result_get_global_context(js_result);
-    value = webkit_javascript_result_get_value(js_result);
-
-    if (JSValueIsString(context, value))
+    value = webkit_javascript_result_get_js_value(js_result);
+    if (jsc_value_is_string(value))
     {
-        js_str_value = JSValueToStringCopy(context, value, NULL);
-        str_length = JSStringGetMaximumUTF8CStringSize(js_str_value);
-        c->feed_html = (gchar *)g_malloc(str_length);
-        JSStringGetUTF8CString(js_str_value, c->feed_html, str_length);
-        JSStringRelease(js_str_value);
+        str_value = jsc_value_to_string(value);
+        exception = jsc_context_get_exception(jsc_value_get_context(value));
+        if (exception != NULL)
+        {
+            fprintf(stderr, __NAME__": Error running javascript: %s\n",
+                    jsc_exception_get_message(exception));
+        }
+        else
+            c->feed_html = str_value;
 
         gtk_entry_set_icon_from_icon_name(GTK_ENTRY(c->location),
                                           GTK_ENTRY_ICON_PRIMARY,
