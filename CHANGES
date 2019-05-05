@@ -1,6 +1,6 @@
 Release history for lariza
 
-next
+v19.05  2019-05-05
   [Fixed]
   - We no longer use WebKit's deprecated JavaScript API.
 
